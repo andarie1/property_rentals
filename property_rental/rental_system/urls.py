@@ -1,5 +1,5 @@
 """
-URL configuration for rental_system project.
+URL configuration for property_rental project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
