@@ -1,12 +1,11 @@
+{% extends 'base.html' %}
 {% load static %}
 
-{% extends 'base.html' %}
-
-{% block title %}Объявления{% endblock %}
+{% block title %}Listings{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1 class="mt-4">Объявления</h1>
+    <h1 class="mt-4">Listings</h1>
     <div class="row">
         {% for listing in listings %}
         <div class="col-md-4">
@@ -14,12 +13,12 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ listing.title }}</h5>
                     <p class="card-text">{{ listing.description|truncatewords:20 }}</p>
-                    <a href="{% url 'listing_detail' listing.id %}" class="btn btn-primary">Подробнее</a>
+                    <a href="{% url 'listing_detail' listing.id %}" class="btn btn-primary">More</a>
                 </div>
             </div>
         </div>
         {% empty %}
-        <p>Объявлений пока нет.</p>
+        <p>No listings yet.</p>
         {% endfor %}
     </div>
 </div>
