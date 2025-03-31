@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Listing(models.Model):
     HOUSING_TYPES = [
         ('apartment', 'Квартира'),
@@ -17,6 +18,18 @@ class Listing(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # Дата создания
     updated_at = models.DateTimeField(auto_now=True)  # Дата обновления
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['location']),
+            models.Index(fields=['price']),
+        ]
+
     def __str__(self):
         return self.title
+
+
+
+
+
+
 
