@@ -1,0 +1,17 @@
+{% load static %}
+<html>
+<head>
+    <title>Amsterdam Rentals</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <section class="hero">
+        <img src="{% static 'css/amsterdam.jpg' %}" alt="Amsterdam">
+        <div class="hero-content">
+            <h1>Find Your Perfect Stay in Amsterdam</h1>
+            <button onclick="location.href='/listings/'">Rent Now</button>
+        </div>
+    </section>
+</body>
+</html>
+
