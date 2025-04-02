@@ -1,60 +1,67 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Listing, ListingView
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.shortcuts import get_object_or_404
+from rest_framework import viewsets, permissions
+from rest_framework.response import Response
+from rest_framework.decorators import action
 from django.contrib.auth import login, logout
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from .models import Listing, ListingView
+from .serializers import ListingSerializer, UserSerializer
 
 
-def home(request):
-    if request.method == 'POST':
-        return redirect('listing_list')
-    return render(request, 'home.html')
+class ListingViewSet(viewsets.ModelViewSet):
+    queryset = Listing.objects.all()
+    serializer_class = ListingSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-def listing_list(request):
-    listings = Listing.objects.all()
-    return render(request, 'listings.html', {'listings': listings})
+    def perform_create(self, serializer):
+        if self.request.user.role != 'landlord':
+            return Response({'error': 'Only landlords can create listings.'}, status=403)
+        serializer.save(owner=self.request.user)
 
-def listing_detail(request, listing_id):
-    listing = get_object_or_404(Listing, id=listing_id)
+    def perform_update(self, serializer):
+        listing = self.get_object()
+        if listing.owner != self.request.user:
+            return Response({'error': 'You can only edit your own listings.'}, status=403)
+        serializer.save()
 
-    if request.user.is_authenticated:
-        ListingView.objects.create(user=request.user, listing=listing)
+    def perform_destroy(self, instance):
+        if instance.owner != self.request.user:
+            return Response({'error': 'You can only delete your own listings.'}, status=403)
+        instance.delete()
 
-    return render(request, 'listings.html', {'listing': listing})
+    @action(detail=True, methods=['post'])
+    def record_view(self, request, pk=None):
+        listing = self.get_object()
+        if request.user.is_authenticated:
+            ListingView.objects.create(user=request.user, listing=listing)
+        return Response({'message': 'View recorded'})
 
-def about_us(request):
-    return render(request, 'about_us.html')
 
-def contact_us(request):
-    return render(request, 'contact_us.html')
-
-def login_register(request):
-    return render(request, 'login_register.html')
-#_____________________________________________________________
-def register(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+class RegisterViewSet(viewsets.ViewSet):
+    def create(self, request):
+        form = UserCreationForm(request.data)
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('')
-    else:
-        form = UserCreationForm()
-    return render(request, 'register.html', {'form': form})
+            return Response(UserSerializer(user).data)
+        return Response(form.errors, status=400)
 
-def login_view(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
+
+class LoginViewSet(viewsets.ViewSet):
+    def create(self, request):
+        form = AuthenticationForm(request, data=request.data)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            return redirect('')
-    else:
-        form = AuthenticationForm()
-    return render(request, 'login.html', {'form': form})
+            return Response(UserSerializer(user).data)
+        return Response(form.errors, status=400)
 
-def logout_view(request):
-    logout(request)
-    return redirect('')
+
+class LogoutViewSet(viewsets.ViewSet):
+    def create(self, request):
+        logout(request)
+        return Response({'message': 'Logged out successfully'})
+
 
 
 
