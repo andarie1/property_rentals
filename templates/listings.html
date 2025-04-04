@@ -1,34 +1,57 @@
-{% load static %}
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Listings</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Rentals</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <nav>
-        <a href="/">Home</a>
-        <a href="/listings/">Listings</a>
-        <a href="/listings/about">About Us</a>
-        <a href="/listings/contact">Contact Us</a>
-        <a href="/listings/login">Login/Register</a>
-    </nav>
-    <div class="listings-container">
-        <h1>Available Rentals</h1>
-        <div class="listings-grid">
-            {% for rental in rentals %}
-                <div class="listing-card">
-                    <img src="{{ rental.photo.url }}" alt="{{ rental.title }}">
-                    <div class="listing-content">
-                        <h2>{{ rental.title }}</h2>
-                        <p>{{ rental.description|truncatechars:100 }}</p>
-                        <p>Price: {{ rental.price }}</p>
-                        <a href="/listings/{{ rental.id }}" class="view-details">View Details</a>
-                    </div>
-                </div>
-            {% empty %}
-                <p>No listings available.</p>
-            {% endfor %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">Rental System</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/listings">Listings</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/about">About Us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/contact">Contact Us</a></li>
+                    <li><a href="/login/">Login</a></li>
+                    <li><a href="/register/">Register</a></li>
+                </ul>
+            </div>
         </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="text-center">Available Rentals</h1>
+        {% if listings %}
+            <div class="row">
+                {% for listing in listings %}
+                    <div class="col-md-4">
+                        <div class="card mb-4">
+                            <img src="{{ listing.image.url }}" class="card-img-top" alt="Listing Image">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ listing.title }}</h5>
+                                <p class="card-text">{{ listing.description|truncatechars:100 }}</p>
+                                <a href="/listings/{{ listing.id }}/" class="btn btn-primary">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-center text-muted">No listings available.</p>
+        {% endif %}
+
+        {% if user.is_authenticated and user.role == "landlord" %}
+            <div class="text-center mt-4">
+                <a href="/listings/create/" class="btn btn-success">Add New Listing</a>
+            </div>
+        {% endif %}
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

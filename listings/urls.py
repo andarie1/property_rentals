@@ -1,14 +1,31 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import (
+    ListingViewSet, home, listing_list, listing_detail, create_listing, login_register, logout_view
+)
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+
+router = DefaultRouter()
+router.register(r'listings', ListingViewSet)  # API
 
 urlpatterns = [
-    path('', views.home, name='home'),
-    path('listings/', views.listing_list, name='listing_list'),
-    path('listings/<int:id>/', views.listing_detail, name='listing_detail'),
-    path('about/', views.about_us, name='about_us'),
-    path('contact/', views.contact_us, name='contact_us'),
-    path('login_register/', views.login_register, name='login_register'),
-    path('register/', views.register, name='register'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
+    # Основные маршруты
+    path('', home, name='home'),
+    path('listings/', listing_list, name='listing_list'),
+    path('listings/<int:id>/', listing_detail, name='listing_detail'),
+    path('listings/create/', create_listing, name='create_listing'),
+
+    # Аутентификация через шаблон
+    path('auth/', login_register, name='login_register'),
+    path('logout/', logout_view, name='logout'),
+
+    # API
+    path('api/', include(router.urls)),
+
+    # JWT авторизация
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 ]
+
+
