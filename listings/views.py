@@ -1,66 +1,78 @@
-from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, permissions
-from rest_framework.response import Response
-from rest_framework.decorators import action
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.http import HttpResponseForbidden
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import Listing, ListingView
-from .serializers import ListingSerializer, UserSerializer
-
+from rest_framework import viewsets
+from .models import Listing
+from .serializers import ListingSerializer
+from rest_framework.permissions import IsAuthenticated
 
 class ListingViewSet(viewsets.ModelViewSet):
     queryset = Listing.objects.all()
     serializer_class = ListingSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
-    def perform_create(self, serializer):
-        if self.request.user.role != 'landlord':
-            return Response({'error': 'Only landlords can create listings.'}, status=403)
-        serializer.save(owner=self.request.user)
+def home(request):
+    return render(request, 'home.html')
 
-    def perform_update(self, serializer):
-        listing = self.get_object()
-        if listing.owner != self.request.user:
-            return Response({'error': 'You can only edit your own listings.'}, status=403)
-        serializer.save()
-
-    def perform_destroy(self, instance):
-        if instance.owner != self.request.user:
-            return Response({'error': 'You can only delete your own listings.'}, status=403)
-        instance.delete()
-
-    @action(detail=True, methods=['post'])
-    def record_view(self, request, pk=None):
-        listing = self.get_object()
-        if request.user.is_authenticated:
-            ListingView.objects.create(user=request.user, listing=listing)
-        return Response({'message': 'View recorded'})
-
-
-class RegisterViewSet(viewsets.ViewSet):
-    def create(self, request):
-        form = UserCreationForm(request.data)
+def register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)
-            return Response(UserSerializer(user).data)
-        return Response(form.errors, status=400)
+            login(request, user)  # Автоматический вход после регистрации
+            return redirect('/listings')  # Перенаправляем на listings
+    else:
+        form = UserCreationForm()
+    return render(request, 'register.html', {'form': form})
+
+def login_register(request):
+    """Обработчик для страницы входа и регистрации"""
+
+    if request.method == 'POST':
+        if 'register' in request.POST:  # Пользователь нажал "Зарегистрироваться"
+            form = UserCreationForm(request.POST)
+            if form.is_valid():
+                user = form.save()
+                login(request, user)
+                return redirect('home')  # Перенаправляем на главную страницу
+        elif 'login' in request.POST:  # Пользователь нажал "Войти"
+            form = AuthenticationForm(request, data=request.POST)
+            if form.is_valid():
+                user = form.get_user()
+                login(request, user)
+                return redirect('home')
+
+    return render(request, 'auth.html', {'register_form': UserCreationForm(), 'login_form': AuthenticationForm()})
+
+def logout_view(request):
+    """Выход пользователя"""
+    logout(request)
+    return redirect('home')
+
+@login_required
+def listing_list(request):
+    listings = Listing.objects.all()
+    return render(request, 'listings.html', {'listings': listings})
+
+@login_required
+def listing_detail(request, id):
+    listing = Listing.objects.get(id=id)
+    return render(request, 'listing_detail.html', {'listing': listing})
+
+@login_required
+def create_listing(request):
+    if not hasattr(request.user, 'role') or request.user.role != 'landlord':
+        return HttpResponseForbidden("Only landlords can create listings.")
+    return render(request, 'create_listing.html')
+
+@login_required
+def my_account(request):
+    return render(request, 'my_account.html', {'user': request.user})
 
 
-class LoginViewSet(viewsets.ViewSet):
-    def create(self, request):
-        form = AuthenticationForm(request, data=request.data)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            return Response(UserSerializer(user).data)
-        return Response(form.errors, status=400)
 
-
-class LogoutViewSet(viewsets.ViewSet):
-    def create(self, request):
-        logout(request)
-        return Response({'message': 'Logged out successfully'})
 
 
 

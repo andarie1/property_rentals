@@ -1,14 +1,15 @@
 from pathlib import Path
+from environ import Env
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-#xm_d^&0+(cwcxt4l6^5jfs&be=rra-dd2*$y@g)&ph&sb2dzv'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+env = Env()
+Env.read_env(BASE_DIR / '.env')
+SECRET_KEY = env('SECRET_KEY')
+DEBUG = env('DEBUG', default=False)
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
 # Application definition
 
@@ -21,6 +22,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'listings',
     'rental_system',
+    'rest_framework',
+    'rest_framework_simplejwt',
+
 ]
 
 MIDDLEWARE = [
@@ -57,13 +61,24 @@ WSGI_APPLICATION = 'rental_system.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if env.bool('MYSQL', default=False):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': env('DB_NAME'),
+            'USER': env('DB_USER'),
+            'PASSWORD': env('DB_PASSWORD'),
+            'HOST': env('DB_HOST'),
+            'PORT': env('DB_PORT'),
     }
 }
-
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -85,9 +100,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+    'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
@@ -112,7 +127,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'rental_system/static',
-    # BASE_DIR / 'static',
 ]
 
 # Default primary key field type
@@ -123,6 +137,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+AUTH_USER_MODEL = 'listings.User'
 
 
 

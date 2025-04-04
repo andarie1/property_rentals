@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Listing</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form { max-width: 400px; margin: auto; }
+        input, textarea { width: 100%; margin-bottom: 10px; padding: 8px; }
+        button { background: #007bff; color: white; border: none; padding: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Create Listing</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="title" placeholder="Title" required>
+        <textarea name="description" placeholder="Description" required></textarea>
+        <input type="number" name="price" placeholder="Price" required>
+        <input type="text" name="address" placeholder="Address" required>
+        <input type="number" name="num_rooms" placeholder="Number of Rooms" required>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
