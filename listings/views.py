@@ -21,8 +21,8 @@ def register(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)  # Автоматический вход после регистрации
-            return redirect('/listings')  # Перенаправляем на listings
+            login(request, user)  # Автоматический вход после регистрации - проверить!!!
+            return redirect('/listings')
     else:
         form = UserCreationForm()
     return render(request, 'register.html', {'form': form})
@@ -31,13 +31,13 @@ def login_register(request):
     """Обработчик для страницы входа и регистрации"""
 
     if request.method == 'POST':
-        if 'register' in request.POST:  # Пользователь нажал "Зарегистрироваться"
+        if 'register' in request.POST:
             form = UserCreationForm(request.POST)
             if form.is_valid():
                 user = form.save()
                 login(request, user)
-                return redirect('home')  # Перенаправляем на главную страницу
-        elif 'login' in request.POST:  # Пользователь нажал "Войти"
+                return redirect('home')
+        elif 'login' in request.POST:
             form = AuthenticationForm(request, data=request.POST)
             if form.is_valid():
                 user = form.get_user()
