@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Account{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: auto; padding: 2rem;">
+    <h2 style="text-align: center;">Welcome, {{ user.username }}!</h2>
+    <hr>
+
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <p><strong>Role:</strong> {{ user.get_role_display }}</p>
+
+    <div style="margin-top: 2rem;">
+        {% if user.role == 'tenant' %}
+            <a href="{% url 'tenant_dashboard' %}" class="btn btn-primary">Go to Tenant Dashboard</a>
+        {% elif user.role == 'landlord' %}
+            <a href="{% url 'landlord_dashboard' %}" class="btn btn-success">Go to Landlord Dashboard</a>
+        {% endif %}
+    </div>
+
+    <div style="margin-top: 1rem;">
+        <a href="{% url 'listing_list' %}" class="btn btn-secondary">View All Listings</a>
+    </div>
+
+    <div style="margin-top: 1rem;">
+        <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
+    </div>
+</div>
+{% endblock %}
