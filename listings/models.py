@@ -1,16 +1,17 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.conf import settings
+
 
 class User(AbstractUser):
     ROLE_CHOICES = [
-        ('landlord', 'Landlord'),
-        ('tenant', 'Tenant'),
+        ("tenant", "Tenant"),
+        ("landlord", "Landlord")
     ]
-
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='tenant')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
 
     def __str__(self):
-        return self.username
+        return f"{self.username} - {self.role}"
 
     groups = models.ManyToManyField(
         "auth.Group",
@@ -37,7 +38,7 @@ class Listing(models.Model):
         ('studio', 'Studio'),
     ]
 
-    landlord = models.ForeignKey(User, on_delete=models.CASCADE, related_name="listings", null=True)
+    landlord = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="listings", null=True)
     title = models.CharField(max_length=255)
     description = models.TextField()
     location = models.CharField(max_length=255)
@@ -55,7 +56,7 @@ class Listing(models.Model):
 
 # 3. Бронирование
 class Booking(models.Model):
-    tenant = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bookings")
+    tenant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bookings")
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="bookings")
     start_date = models.DateField()
     end_date = models.DateField()
@@ -69,7 +70,7 @@ class Booking(models.Model):
 
 # 4. Отзывы
 class Review(models.Model):
-    tenant = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reviews")
+    tenant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews")
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="reviews")
     rating = models.PositiveIntegerField(choices=[(i, i) for i in range(1, 6)])
     comment = models.TextField(blank=True)
@@ -81,7 +82,7 @@ class Review(models.Model):
 
 # 5. История просмотров
 class ListingView(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="views")  # Кто смотрел
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="views")  # Кто смотрел
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="views")  # Что смотрел
     viewed_at = models.DateTimeField(auto_now_add=True)  # Когда смотрел
 
@@ -90,12 +91,6 @@ class ListingView(models.Model):
 
     def __str__(self):
         return f"View: {self.user} -> {self.listing} at {self.viewed_at}"
-
-
-
-
-
-
 
 
 
