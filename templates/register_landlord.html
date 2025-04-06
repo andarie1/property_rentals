@@ -1,13 +1,9 @@
-{% extends 'base.html' %}
-{% block title %}Register as Landlord{% endblock %}
-
+{% extends "base.html" %}
 {% block content %}
-<h2 class="mb-4">Register as Landlord</h2>
-<form method="POST">
-    {% csrf_token %}
-    {% include "partials/registration_form.html" %}
-    <button type="submit" class="btn btn-primary">Submit Landlord Registration</button>
-</form>
+  <h2>Landlord Registration</h2>
+  {% include "partials/registration_form.html" with form=form %}
 {% endblock %}
+
+
 
 
