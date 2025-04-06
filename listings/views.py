@@ -2,7 +2,6 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
-from django.contrib import messages
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from .models import Listing
@@ -17,37 +16,39 @@ class ListingViewSet(viewsets.ModelViewSet):
 
 # ------------------- Главная -------------------
 def home(request):
-    return redirect('listing_list')  # listings/
+    return render(request, 'home.html')
 
 # ------------------- Регистрация -------------------
 def register_choice(request):
     return render(request, 'register_choice.html')
 
+
 def tenant_register(request):
     if request.method == 'POST':
-        serializer = TenantRegistrationSerializer(data=request.POST)
-        if serializer.is_valid():
-            user = serializer.save()
+        form = TenantRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
             login(request, user)
             return redirect('listing_list')
-        else:
-            return render(request, 'register_tenant.html', {'form': serializer})
     else:
-        form = TenantRegistrationSerializer()
-        return render(request, 'register_tenant.html', {'form': form})
+        form = TenantRegisterForm()
+    return render(request, 'register_tenant.html', {'form': form})
+
+
+from .forms import TenantRegisterForm, LandlordRegisterForm
+
 
 def landlord_register(request):
     if request.method == 'POST':
-        serializer = LandlordRegistrationSerializer(data=request.POST)
-        if serializer.is_valid():
-            user = serializer.save()
+        form = LandlordRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
             login(request, user)
             return redirect('listing_list')
-        else:
-            return render(request, 'register_landlord.html', {'form': serializer})
     else:
-        form = LandlordRegistrationSerializer()
-        return render(request, 'register_landlord.html', {'form': form})
+        form = TenantRegisterForm()
+    return render(request, 'register_landlord.html', {'form': form})
+
 
 # ------------------- Дашборд арендатора -------------------
 @login_required
@@ -83,7 +84,7 @@ def logout_view(request):
 # ------------------- Список объявлений -------------------
 @login_required
 def listing_list(request):
-    listings = Listing.objects.all()
+    listings = Listing.objects.filter(is_active=True)
     return render(request, 'listings.html', {'listings': listings})
 
 # ------------------- Детали объявления -------------------
@@ -102,9 +103,16 @@ def create_listing(request):
 # ------------------- Мой аккаунт -------------------
 @login_required
 def my_account(request):
-    return render(request, 'my_account.html', {
-        'user': request.user,
-        'role': request.user.role
-    })
-
+    if request.user.role == 'tenant':
+        return redirect('tenant_dashboard')
+    elif request.user.role == 'landlord':
+        return redirect('landlord_dashboard')
+    return HttpResponseForbidden("Access denied.")
+# ----------------- Переключатель ------------------
+@login_required
+def toggle_listing_status(request, id):
+    listing = get_object_or_404(Listing, id=id, landlord=request.user)
+    listing.is_active = not listing.is_active
+    listing.save()
+    return redirect('my_account')
 

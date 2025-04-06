@@ -29,6 +29,7 @@ class TenantRegisterForm(forms.ModelForm):
             user.save()
         return user
 
+
 class LandlordRegisterForm(TenantRegisterForm):
     def save(self, commit=True):
         user = super().save(commit=False)
