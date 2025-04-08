@@ -2,10 +2,9 @@
 
 {% block content %}
   <h2>Edit Listing</h2>
-  <form method="post">
+ <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
-    <button class="btn btn-primary" type="submit">Save</button>
-    <a href="{% url 'my_account' %}" class="btn btn-secondary">Cancel</a>
-  </form>
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>
 {% endblock %}
