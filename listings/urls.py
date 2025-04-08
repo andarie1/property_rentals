@@ -10,7 +10,7 @@ from .views import (
     logout_view,
     tenant_register,
     landlord_register,
-    my_account, register_choice, tenant_dashboard, landlord_dashboard, toggle_listing_status
+    my_account, register_choice, tenant_dashboard, landlord_dashboard, toggle_listing_status, edit_review
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
@@ -38,6 +38,8 @@ urlpatterns = [
 
     path('dashboard/tenant/', tenant_dashboard, name='tenant_dashboard'),
     path('dashboard/landlord/', landlord_dashboard, name='landlord_dashboard'),
+
+    path('reviews/<int:id>/edit/', edit_review, name='edit_review'),
 
     # API маршруты
     path('api/', include(router.urls)),

@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'rental_system',
     'rest_framework',
     'rest_framework_simplejwt',
+    'widget_tweaks',
 
 ]
 

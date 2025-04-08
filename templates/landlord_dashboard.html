@@ -1,30 +1,34 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="container mt-4">
-    <h2>My Listings</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Your Listings</h2>
+        <a href="{% url 'create_listing' %}" class="btn btn-primary">+ Add Listing</a>
+    </div>
+
     {% if listings %}
         <div class="row">
             {% for listing in listings %}
-                <div class="col-md-4 mb-3">
+                <div class="col-md-6 col-lg-4 mb-4">
                     <div class="card h-100">
                         {% if listing.image %}
-                        <img src="{{ listing.image.url }}" class="card-img-top" alt="{{ listing.title }}" style="height: 200px; object-fit: cover;">
+                            <img src="{{ listing.image.url }}" class="card-img-top" alt="Listing Image">
                         {% endif %}
                         <div class="card-body">
                             <h5 class="card-title">{{ listing.title }}</h5>
-                            <p class="card-text">{{ listing.location }}</p>
-                            <p><strong>€{{ listing.price }}</strong></p>
-                            <a href="{% url 'edit_listing' listing.id %}" class="btn btn-sm btn-warning">Edit</a>
-                            <a href="{% url 'delete_listing' listing.id %}" class="btn btn-sm btn-danger">Delete</a>
+                            <p class="card-text">{{ listing.description|truncatewords:20 }}</p>
+                            <p class="card-text"><strong>${{ listing.price }}</strong></p>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between">
+                            <a href="{% url 'edit_listing' listing.id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                            <a href="{% url 'delete_listing' listing.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
                         </div>
                     </div>
                 </div>
             {% endfor %}
         </div>
     {% else %}
-        <p>You have no listings yet.</p>
+        <p>You haven't created any listings yet.</p>
     {% endif %}
 </div>
 {% endblock %}
-

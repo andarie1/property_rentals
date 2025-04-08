@@ -10,6 +10,7 @@ from .serializers import ListingSerializer
 from django.contrib.auth.forms import AuthenticationForm
 from django.db.models import Q, Avg
 from django.core.paginator import Paginator
+from .forms import TenantRegisterForm, LandlordRegisterForm, ListingForm, ReviewForm, SearchForm
 
 # ------------------- REST API -------------------
 class ListingViewSet(viewsets.ModelViewSet):
@@ -36,9 +37,6 @@ def tenant_register(request):
     else:
         form = TenantRegisterForm()
     return render(request, 'register_tenant.html', {'form': form})
-
-
-from .forms import TenantRegisterForm, LandlordRegisterForm, ListingForm, ReviewForm, SearchForm
 
 
 def landlord_register(request):
@@ -74,7 +72,7 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            return redirect('home')
+            return redirect('listing_list')
     else:
         form = AuthenticationForm()
         return render(request, 'login.html', {'form': form})
@@ -223,6 +221,22 @@ def toggle_listing_status(request, id):
     listing.save()
     return redirect('my_account')
 
+@login_required
+def edit_review(request, id):
+    review = get_object_or_404(Review, id=id, tenant=request.user)
+
+    if request.method == 'POST':
+        form = ReviewForm(request.POST, instance=review)
+        if form.is_valid():
+            form.save()
+            return redirect('listing_detail', id=review.listing.id)
+    else:
+        form = ReviewForm(instance=review)
+
+    return render(request, 'edit_review.html', {
+        'form': form,
+        'review': review
+    })
 
 
 

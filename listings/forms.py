@@ -40,11 +40,19 @@ class LandlordRegisterForm(TenantRegisterForm):
             user.save()
         return user
 
+STATUS_CHOICES = (
+    (True, 'Active'),
+    (False, 'Inactive'),
+)
 
 class ListingForm(forms.ModelForm):
     class Meta:
         model = Listing
         fields = ['title', 'description', 'location', 'price', 'rooms', 'housing_type', 'is_active', 'image']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['is_active'].initial = True
 
 
 class ReviewForm(forms.ModelForm):
@@ -55,9 +63,6 @@ class ReviewForm(forms.ModelForm):
             'rating': forms.Select(choices=[(i, f'{i}★') for i in range(1, 6)]),
             'comment': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Leave your comment...'}),
         }
-
-from django import forms
-from listings.models import Listing
 
 class SearchForm(forms.Form):
     keyword = forms.CharField(required=False)
