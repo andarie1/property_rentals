@@ -1,30 +1,57 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load form_tags %} # !!!
+{% load widget_tweaks %}
 {% block content %}
 <div class="container mt-4">
 
   <!-- Заголовок -->
   <h2 class="mb-4">Browse Listings</h2>
 
-  <!-- Форма фильтрации -->
-  <form method="get" class="bg-light p-4 rounded shadow-sm mb-4">
-    <div class="row g-2">
-      <div class="col-md-3">{{ form.keyword }}</div>
-      <div class="col-md-3">{{ form.location }}</div>
-      <div class="col-md-2">{{ form.min_price }}</div>
-      <div class="col-md-2">{{ form.max_price }}</div>
-      <div class="col-md-2">{{ form.sort_by }}</div>
+<!-- Форма фильтрации -->
+<form method="get" class="bg-light p-4 rounded shadow-sm mb-4">
+  <div class="row g-2">
+    <div class="col-md-3">
+      {{ form.keyword.label_tag }}
+      {{ form.keyword|add_class:"form-control"|attr:"placeholder:Search by title or description" }}
     </div>
-    <div class="row g-2 mt-2">
-      <div class="col-md-2">{{ form.min_rooms }}</div>
-      <div class="col-md-2">{{ form.max_rooms }}</div>
-      <div class="col-md-3">{{ form.housing_type }}</div>
-      <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100">Search</button>
-      </div>
+    <div class="col-md-3">
+      {{ form.location.label_tag }}
+      {{ form.location|add_class:"form-control"|attr:"placeholder:Location" }}
     </div>
-  </form>
+    <div class="col-md-2">
+      {{ form.min_price.label_tag }}
+      {{ form.min_price|add_class:"form-control"|attr:"placeholder:Min Price" }}
+    </div>
+    <div class="col-md-2">
+      {{ form.max_price.label_tag }}
+      {{ form.max_price|add_class:"form-control"|attr:"placeholder:Max Price" }}
+    </div>
+    <div class="col-md-2">
+      {{ form.sort_by.label_tag }}
+      {{ form.sort_by|add_class:"form-select" }}
+    </div>
+  </div>
+
+  <div class="row g-2 mt-2">
+    <div class="col-md-2">
+      {{ form.min_rooms.label_tag }}
+      {{ form.min_rooms|add_class:"form-control"|attr:"placeholder:Min Rooms" }}
+    </div>
+    <div class="col-md-2">
+      {{ form.max_rooms.label_tag }}
+      {{ form.max_rooms|add_class:"form-control"|attr:"placeholder:Max Rooms" }}
+    </div>
+    <div class="col-md-3">
+      {{ form.housing_type.label_tag }}
+      {{ form.housing_type|add_class:"form-select" }}
+    </div>
+    <div class="col-md-2">
+      <label class="invisible d-block">Search</label>
+      <button type="submit" class="btn btn-primary w-100">Search</button>
+    </div>
+  </div>
+</form>
+
 
   <!-- Список объявлений -->
   {% if listings %}

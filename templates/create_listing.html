@@ -1,26 +1,64 @@
 {% extends "base.html" %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Listing</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        form { max-width: 400px; margin: auto; }
-        input, textarea { width: 100%; margin-bottom: 10px; padding: 8px; }
-        button { background: #007bff; color: white; border: none; padding: 10px; cursor: pointer; }
-    </style>
-</head>
-<body>
+{% load widget_tweaks %}
+
+{% block content %}
+<style>
+/* Кастомные стили для переключателя */
+.form-switch .form-check-input {
+    width: 50px;
+    height: 28px;
+    background-color: #ccc;
+    border-radius: 30px;
+    position: relative;
+    appearance: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.form-switch .form-check-input::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 4px;
+    width: 22px;
+    height: 22px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+/* Активный (включённый) */
+.form-switch .form-check-input:checked {
+    background-color: #28a745; /* зелёный */
+}
+
+/* Шарик при активном */
+.form-switch .form-check-input:checked::before {
+    transform: translateX(22px);
+}
+</style>
+
+<div class="container mt-4">
     <h2>Create Listing</h2>
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data" class="bg-light p-4 rounded shadow-sm">
         {% csrf_token %}
-        <input type="text" name="title" placeholder="Title" required>
-        <textarea name="description" placeholder="Description" required></textarea>
-        <input type="number" name="price" placeholder="Price" required>
-        <input type="text" name="address" placeholder="Address" required>
-        <input type="number" name="num_rooms" placeholder="Number of Rooms" required>
-        <button type="submit">Submit</button>
+        {% for field in form %}
+            <div class="mb-3">
+                {% if field.name == "is_active" %}
+                    <div class="form-check form-switch">
+                        {{ field.label_tag }}
+                        {{ field|add_class:"form-check-input" }}
+                    </div>
+                {% else %}
+                    {{ field.label_tag }}
+                    {{ field|add_class:"form-control" }}
+                {% endif %}
+                {% if field.errors %}
+                    <div class="text-danger">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Submit</button>
     </form>
-</body>
-</html>
+</div>
+{% endblock %}
