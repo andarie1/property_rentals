@@ -1,12 +1,15 @@
+from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import Listing
-from .serializers import ListingSerializer, TenantRegistrationSerializer, LandlordRegistrationSerializer
+from .models import Listing, Review
+from .serializers import ListingSerializer
 from django.contrib.auth.forms import AuthenticationForm
+from django.db.models import Q, Avg
+from django.core.paginator import Paginator
 
 # ------------------- REST API -------------------
 class ListingViewSet(viewsets.ModelViewSet):
@@ -35,7 +38,7 @@ def tenant_register(request):
     return render(request, 'register_tenant.html', {'form': form})
 
 
-from .forms import TenantRegisterForm, LandlordRegisterForm, ListingForm
+from .forms import TenantRegisterForm, LandlordRegisterForm, ListingForm, ReviewForm, SearchForm
 
 
 def landlord_register(request):
@@ -84,32 +87,110 @@ def logout_view(request):
 # ------------------- Список объявлений -------------------
 @login_required
 def listing_list(request):
-    listings = Listing.objects.filter(is_active=True).order_by('-created_at')
-    return render(request, 'listings.html', {'listings': listings})
+    listings = Listing.objects.filter(is_active=True).annotate(
+        average_rating=Avg('reviews__rating')
+    )
+    form = SearchForm(request.GET or None)
+
+    if form.is_valid():
+        keyword = form.cleaned_data.get('keyword')
+        min_price = form.cleaned_data.get('min_price')
+        max_price = form.cleaned_data.get('max_price')
+        location = form.cleaned_data.get('location')
+        min_rooms = form.cleaned_data.get('min_rooms')
+        max_rooms = form.cleaned_data.get('max_rooms')
+        housing_type = form.cleaned_data.get('housing_type')
+        sort_by = form.cleaned_data.get('sort_by')
+
+        if keyword:
+            listings = listings.filter(
+                Q(title__icontains=keyword) | Q(description__icontains=keyword)
+            )
+        if location:
+            listings = listings.filter(location__icontains=location)
+        if min_price is not None:
+            listings = listings.filter(price__gte=min_price)
+        if max_price is not None:
+            listings = listings.filter(price__lte=max_price)
+        if min_rooms is not None:
+            listings = listings.filter(rooms__gte=min_rooms)
+        if max_rooms is not None:
+            listings = listings.filter(rooms__lte=max_rooms)
+        if housing_type:
+            listings = listings.filter(housing_type=housing_type)
+        if sort_by:
+            listings = listings.order_by(sort_by)
+        else:
+            listings = listings.order_by('-created_at')
+
+    paginator = Paginator(listings, 10)
+    page = request.GET.get('page')
+    listings = paginator.get_page(page)
+
+    return render(request, 'listings.html', {
+        'listings': listings,
+        'form': form
+    })
 
 # ------------------- Детали объявления -------------------
 @login_required
 def listing_detail(request, id):
     listing = get_object_or_404(Listing, id=id)
-    return render(request, 'listing_detail.html', {'listing': listing})
+    reviews = listing.reviews.all()
+    avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
+
+    user_review = None
+    form = None
+
+    if request.user.is_authenticated and request.user.role == 'tenant':
+        user_review = Review.objects.filter(tenant=request.user, listing=listing).first()
+        if not user_review:
+            if request.method == 'POST':
+                form = ReviewForm(request.POST)
+                if form.is_valid():
+                    review = form.save(commit=False)
+                    review.tenant = request.user
+                    review.listing = listing
+                    review.save()
+                    return redirect('listing_detail', id=listing.id)
+            else:
+                form = ReviewForm()
+
+    return render(request, 'listing_detail.html', {
+        'listing': listing,
+        'reviews': reviews,
+        'avg_rating': avg_rating,
+        'form': form,
+        'user_review': user_review
+    })
 
 # ------------------- Создать объявление -------------------
 @login_required
 def create_listing(request):
-    if request.user.role != 'landlord':
-        return HttpResponseForbidden("Only landlords can create listings.")
-    return render(request, 'create_listing.html')
+    if request.method == 'POST':
+        form = ListingForm(request.POST, request.FILES)
+        if form.is_valid():
+            listing = form.save(commit=False)
+            listing.landlord = request.user
+            listing.save()
+            messages.success(request, 'Listing created!')
+            return redirect('landlord_dashboard')
+    else:
+        form = ListingForm()
+    return render(request, 'create_listing.html', {'form': form})
 
 @login_required
 def edit_listing(request, id):
     listing = get_object_or_404(Listing, id=id, landlord=request.user)
+
     if request.method == 'POST':
-        form = ListingForm(request.POST, instance=listing)
+        form = ListingForm(request.POST, request.FILES, instance=listing)
         if form.is_valid():
             form.save()
             return redirect('my_account')
     else:
         form = ListingForm(instance=listing)
+
     return render(request, 'edit_listing.html', {'form': form, 'listing': listing})
 
 @login_required
@@ -128,6 +209,12 @@ def my_account(request):
     elif request.user.role == 'landlord':
         return redirect('landlord_dashboard')
     return HttpResponseForbidden("Access denied.")
+
+@login_required
+def landlord_dashboard(request):
+    listings = Listing.objects.filter(landlord=request.user)
+    return render(request, 'landlord_dashboard.html', {'listings': listings})
+
 # ----------------- Переключатель ------------------
 @login_required
 def toggle_listing_status(request, id):
@@ -135,4 +222,8 @@ def toggle_listing_status(request, id):
     listing.is_active = not listing.is_active
     listing.save()
     return redirect('my_account')
+
+
+
+
 

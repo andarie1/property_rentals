@@ -34,6 +34,7 @@ urlpatterns = [
     path('register/landlord/', landlord_register, name='register_landlord'),
     path('my_account/', my_account, name='my_account'),
     path('register_choice/', register_choice, name='register_choice'),
+    path('landlord_dashboard/', landlord_dashboard, name='landlord_dashboard'),
 
     path('dashboard/tenant/', tenant_dashboard, name='tenant_dashboard'),
     path('dashboard/landlord/', landlord_dashboard, name='landlord_dashboard'),

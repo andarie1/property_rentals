@@ -1,6 +1,7 @@
 from django import forms
-from .models import Listing
+from .models import Listing, Review
 from django.contrib.auth import get_user_model
+
 
 User = get_user_model()
 
@@ -43,5 +44,38 @@ class LandlordRegisterForm(TenantRegisterForm):
 class ListingForm(forms.ModelForm):
     class Meta:
         model = Listing
-        fields = ['title', 'description', 'location', 'price', 'rooms', 'housing_type', 'is_active']
+        fields = ['title', 'description', 'location', 'price', 'rooms', 'housing_type', 'is_active', 'image']
 
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['rating', 'comment']
+        widgets = {
+            'rating': forms.Select(choices=[(i, f'{i}★') for i in range(1, 6)]),
+            'comment': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Leave your comment...'}),
+        }
+
+from django import forms
+from listings.models import Listing
+
+class SearchForm(forms.Form):
+    keyword = forms.CharField(required=False)
+    min_price = forms.IntegerField(required=False, min_value=0)
+    max_price = forms.IntegerField(required=False, min_value=0)
+    location = forms.CharField(required=False)
+    min_rooms = forms.IntegerField(required=False, min_value=0)
+    max_rooms = forms.IntegerField(required=False, min_value=0)
+    housing_type = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Any')] + list(Listing.HOUSING_TYPES)
+    )
+    sort_by = forms.ChoiceField(
+        required=False,
+        choices=[
+            ('price', 'Price (Low to High)'),
+            ('-price', 'Price (High to Low)'),
+            ('created_at', 'Date (Oldest First)'),
+            ('-created_at', 'Date (Newest First)'),
+        ]
+    )
