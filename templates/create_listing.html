@@ -3,7 +3,6 @@
 
 {% block content %}
 <style>
-/* Кастомные стили для переключателя */
 .form-switch .form-check-input {
     width: 50px;
     height: 28px;
@@ -27,12 +26,10 @@
     transition: 0.3s;
 }
 
-/* Активный (включённый) */
 .form-switch .form-check-input:checked {
-    background-color: #28a745; /* зелёный */
+    background-color: #28a745;
 }
 
-/* Шарик при активном */
 .form-switch .form-check-input:checked::before {
     transform: translateX(22px);
 }
@@ -49,6 +46,10 @@
                         {{ field.label_tag }}
                         {{ field|add_class:"form-check-input" }}
                     </div>
+                {% elif field.name == "contact_info" %}
+                    {{ field.label_tag }}
+                    {{ field|add_class:"form-control" }}
+                    <small class="form-text text-muted">Enter either email or phone number (will be shown to tenants).</small>
                 {% else %}
                     {{ field.label_tag }}
                     {{ field|add_class:"form-control" }}
@@ -62,3 +63,4 @@
     </form>
 </div>
 {% endblock %}
+

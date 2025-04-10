@@ -3,9 +3,10 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
+from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import Listing, Review
+from .models import Listing, Review, ListingView
 from .serializers import ListingSerializer
 from django.contrib.auth.forms import AuthenticationForm
 from django.db.models import Q, Avg
@@ -66,6 +67,7 @@ def landlord_dashboard(request):
     return render(request, 'landlord_dashboard.html')
 
 # ------------------- Логин -------------------
+
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -73,9 +75,12 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
             return redirect('listing_list')
+        else:
+            messages.error(request, "Неверное имя пользователя или пароль.")
     else:
         form = AuthenticationForm()
-        return render(request, 'login.html', {'form': form})
+
+    return render(request, 'login.html', {'form': form})
 
 # ------------------- Выход -------------------
 def logout_view(request):
@@ -134,6 +139,17 @@ def listing_list(request):
 @login_required
 def listing_detail(request, id):
     listing = get_object_or_404(Listing, id=id)
+
+    # Создаём запись о просмотре, если пользователь еще не смотрел сегодня
+    if request.user.is_authenticated:
+        already_viewed = ListingView.objects.filter(
+            user=request.user,
+            listing=listing,
+            viewed_at__date=timezone.now().date()
+        ).exists()
+        if not already_viewed:
+            ListingView.objects.create(user=request.user, listing=listing)
+
     reviews = listing.reviews.all()
     avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
 
@@ -161,6 +177,7 @@ def listing_detail(request, id):
         'form': form,
         'user_review': user_review
     })
+
 
 # ------------------- Создать объявление -------------------
 @login_required
@@ -238,6 +255,11 @@ def edit_review(request, id):
         'review': review
     })
 
+# def clean_contact_info(self):
+#     data = self.cleaned_data.get('contact_info')
+#     if not data:
+#         raise ValidationError("Please provide at least one way to contact you (email or phone).")
+#     return data
 
 
 
