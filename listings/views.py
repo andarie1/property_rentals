@@ -135,18 +135,20 @@ def listing_list(request):
         'form': form
     })
 
+# views.py
+
 # ------------------- Детали объявления -------------------
 @login_required
 def listing_detail(request, id):
     listing = get_object_or_404(Listing, id=id)
 
-    # Создаём запись о просмотре, если пользователь еще не смотрел сегодня
     if request.user.is_authenticated:
         already_viewed = ListingView.objects.filter(
             user=request.user,
             listing=listing,
             viewed_at__date=timezone.now().date()
         ).exists()
+
         if not already_viewed:
             ListingView.objects.create(user=request.user, listing=listing)
 
@@ -156,8 +158,9 @@ def listing_detail(request, id):
     user_review = None
     form = None
 
-    if request.user.is_authenticated and request.user.role == 'tenant':
+    if request.user.role == 'tenant':
         user_review = Review.objects.filter(tenant=request.user, listing=listing).first()
+
         if not user_review:
             if request.method == 'POST':
                 form = ReviewForm(request.POST)
@@ -166,18 +169,20 @@ def listing_detail(request, id):
                     review.tenant = request.user
                     review.listing = listing
                     review.save()
+                    messages.success(request, "Спасибо за ваш отзыв!")
                     return redirect('listing_detail', id=listing.id)
             else:
                 form = ReviewForm()
+        else:
+            form = None
 
     return render(request, 'listing_detail.html', {
         'listing': listing,
         'reviews': reviews,
         'avg_rating': avg_rating,
         'form': form,
-        'user_review': user_review
+        'user_review': user_review,
     })
-
 
 # ------------------- Создать объявление -------------------
 @login_required
@@ -255,11 +260,78 @@ def edit_review(request, id):
         'review': review
     })
 
-# def clean_contact_info(self):
-#     data = self.cleaned_data.get('contact_info')
-#     if not data:
-#         raise ValidationError("Please provide at least one way to contact you (email or phone).")
-#     return data
+
+# ------------------- Импорты -------------------
+from .models import Booking
+from .forms import BookingForm
+from django.utils.timezone import now
+from django.db.models import Q
+
+
+# ------------------- Создать бронирование -------------------
+@login_required
+def create_booking(request, listing_id):
+    listing = get_object_or_404(Listing, id=listing_id)
+
+    if request.method == 'POST':
+        form = BookingForm(request.POST)
+        if form.is_valid():
+            booking = form.save(commit=False)
+            booking.tenant = request.user
+            booking.listing = listing
+
+            # Проверка: нет пересечений с другими бронированиями
+            overlapping = Booking.objects.filter(
+                listing=listing,
+                status__in=['pending', 'confirmed'],
+                start_date__lt=booking.end_date,
+                end_date__gt=booking.start_date
+            ).exists()
+            if overlapping:
+                messages.error(request, "These dates are already booked.")
+            else:
+                booking.save()
+                messages.success(request, "Booking request sent.")
+                return redirect('tenant_bookings')
+    else:
+        form = BookingForm()
+
+    return render(request, 'create_booking.html', {'form': form, 'listing': listing})
+
+
+# ------------------- Мои бронирования -------------------
+@login_required
+def tenant_bookings(request):
+    active_bookings = Booking.objects.filter(
+        tenant=request.user,
+        end_date__gte=now().date()
+    ).order_by('start_date')
+
+    past_bookings = Booking.objects.filter(
+        tenant=request.user,
+        end_date__lt=now().date()
+    ).order_by('-end_date')
+
+    return render(request, 'tenant_bookings.html', {
+        'active_bookings': active_bookings,
+        'past_bookings': past_bookings
+    })
+
+
+# ------------------- Отмена бронирования -------------------
+@login_required
+def cancel_booking(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id, tenant=request.user)
+
+    if booking.start_date <= now().date():
+        messages.error(request, "You can’t cancel a booking on or after the start date.")
+    else:
+        booking.status = 'cancelled'
+        booking.save()
+        messages.success(request, "Booking cancelled.")
+
+    return redirect('tenant_bookings')
+
 
 
 

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Listing, Review
+from .models import Listing, Review, Booking
 from django.contrib.auth import get_user_model
 
 
@@ -84,3 +84,8 @@ class SearchForm(forms.Form):
             ('-created_at', 'Date (Newest First)'),
         ]
     )
+
+class BookingForm(forms.ModelForm):
+    class Meta:
+        model = Booking
+        fields = ['start_date', 'end_date']

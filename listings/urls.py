@@ -10,7 +10,8 @@ from .views import (
     logout_view,
     tenant_register,
     landlord_register,
-    my_account, register_choice, tenant_dashboard, landlord_dashboard, toggle_listing_status, edit_review
+    my_account, register_choice, tenant_dashboard, landlord_dashboard, toggle_listing_status, edit_review,
+    create_booking, tenant_bookings, cancel_booking,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
@@ -50,6 +51,10 @@ urlpatterns = [
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 ]
 
-
+urlpatterns += [
+    path('booking/<int:listing_id>/create/', create_booking, name='create_booking'),
+    path('bookings/', tenant_bookings, name='tenant_bookings'),
+    path('booking/<int:booking_id>/cancel/', cancel_booking, name='cancel_booking'),
+]
 
 
