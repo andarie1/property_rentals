@@ -48,7 +48,7 @@ STATUS_CHOICES = (
 class ListingForm(forms.ModelForm):
     class Meta:
         model = Listing
-        fields = ['title', 'description', 'location', 'price', 'rooms', 'housing_type', 'is_active', 'image']
+        fields = ['title', 'description', 'location', 'price', 'rooms', 'housing_type', 'is_active', 'image', 'contact_info']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
