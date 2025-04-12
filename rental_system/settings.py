@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = Env()
 Env.read_env(BASE_DIR / '.env')
 SECRET_KEY = env('SECRET_KEY')
-DEBUG = env('DEBUG', default=False)
+DEBUG = env('DEBUG', default=True)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
 # Application definition
@@ -24,7 +24,7 @@ INSTALLED_APPS = [
     'rental_system',
     'rest_framework',
     'rest_framework_simplejwt',
-    'widget_tweaks',
+    'rest_framework_simplejwt.token_blacklist',
 
 ]
 
@@ -101,7 +101,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-    'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ),
@@ -140,11 +140,27 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 AUTH_USER_MODEL = 'listings.User'
 
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/listings/'  # после логина
-LOGOUT_REDIRECT_URL = '/'  # после выхода
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+# LOGIN_URL = '/login/'
+# LOGIN_REDIRECT_URL = '/listings/'
+# LOGOUT_REDIRECT_URL = '/'
 
-
+# LOGGING = {
+#     'version': 1,
+#     'handlers': {
+#         'console': {
+#             'class': 'logging.StreamHandler',
+#         },
+#     },
+#     'loggers': {
+#         'django.db.backends': {
+#             'level': 'DEBUG',
+#             'handlers': ['console'],
+#         },
+#     },
+# }
 
 
 
