@@ -85,7 +85,25 @@ class SearchForm(forms.Form):
         ]
     )
 
+import datetime
+
 class BookingForm(forms.ModelForm):
+    start_date = forms.DateField(widget=forms.SelectDateWidget, initial=datetime.date.today() + datetime.timedelta(days=1))
+    end_date = forms.DateField(widget=forms.SelectDateWidget)
+
     class Meta:
         model = Booking
         fields = ['start_date', 'end_date']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+
+        if start_date and end_date:
+            if start_date < datetime.date.today() + datetime.timedelta(days=1):
+                self.add_error('start_date', "Start date must be at least tomorrow.")
+            if end_date <= start_date:
+                self.add_error('end_date', "End date must be after start date.")
+        return cleaned_data
+

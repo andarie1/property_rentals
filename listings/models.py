@@ -1,33 +1,34 @@
-from django.db import models
-from django.contrib.auth.models import AbstractUser
 from django.conf import settings
+from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import AbstractUser, PermissionsMixin
+from django.db import models
 
 
-class User(AbstractUser):
-    ROLE_CHOICES = [
-        ("tenant", "Tenant"),
-        ("landlord", "Landlord")
-    ]
+class CustomUserManager(BaseUserManager):
+    def create_user(self, username, email, password=None, **extra_fields):
+        if not username:
+            raise ValueError('Username is required')
+        if not password:
+            raise ValueError('Password is required')  # Добавьте эту проверку
+        email = self.normalize_email(email)
+        user = self.model(username=username, email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(username, email, password, **extra_fields)
+
+
+class User(AbstractUser, PermissionsMixin):
+    ROLE_CHOICES = (
+        ('tenant', 'Tenant'),
+        ('landlord', 'Landlord'),
+    )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
-
-    def __str__(self):
-        return f"{self.username} - {self.role}"
-
-    groups = models.ManyToManyField(
-        "auth.Group",
-        related_name="listings_users_groups",
-        blank=True,
-        help_text="The groups this user belongs to.",
-        verbose_name="groups",
-    )
-
-    user_permissions = models.ManyToManyField(
-        "auth.Permission",
-        related_name="listings_users_permissions",
-        blank=True,
-        help_text="Specific permissions for this user.",
-        verbose_name="user permissions",
-    )
+    objects = CustomUserManager()
 
 
 # 2. Объявление
