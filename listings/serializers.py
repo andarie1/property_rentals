@@ -1,8 +1,9 @@
 from rest_framework import serializers, request
 from django.contrib.auth import get_user_model,authenticate
-from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.utils.translation import gettext_lazy as _
+from datetime import date, timedelta
+from listings.models import Listing, Review, Booking
 
 User = get_user_model()
 
@@ -67,4 +68,39 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'role']
 
+
+class ListingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Listing
+        fields = '__all__'
+        read_only_fields = ['id', 'landlord', 'created_at', 'updated_at']
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['id', 'rating', 'comment', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+# ---------------- Booking ----------------
+class BookingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Booking
+        fields = '__all__'
+        read_only_fields = ['tenant', 'status']
+
+    def validate_start_date(self, value):
+        tomorrow = date.today() + timedelta(days=1)
+        if value < tomorrow:
+            raise serializers.ValidationError("Бронирование возможно только начиная с завтрашнего дня.")
+        return value
+
+    def validate(self, data):
+        if data['end_date'] <= data['start_date']:
+            raise serializers.ValidationError("Дата окончания должна быть позже даты начала.")
+        return data
+
+    def create(self, validated_data):
+        validated_data['tenant'] = self.context['request'].user
+        return super().create(validated_data)
 

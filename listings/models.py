@@ -84,8 +84,8 @@ class Review(models.Model):
 
 # 5. История просмотров
 class ListingView(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="views")  # Кто смотрел
-    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="views")  # Что смотрел
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="views")
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="views")
     viewed_at = models.DateTimeField(auto_now_add=True)  # Когда смотрел
 
     class Meta:
