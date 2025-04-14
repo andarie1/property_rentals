@@ -1,0 +1,11 @@
+{
+  "base_url": "http://localhost:8000/api",
+  "tenant": {
+    "username": "user",
+    "password": "user"
+  },
+  "landlord": {
+    "username": "admin",
+    "password": "admin"
+  }
+}

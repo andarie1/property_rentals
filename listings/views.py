@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import generics, status, permissions, viewsets
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.generics import get_object_or_404
+from rest_framework.generics import get_object_or_404, ListCreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,16 +18,15 @@ from .serializers import (
     CustomTokenObtainPairSerializer,
     ListingSerializer,
     ReviewSerializer,
-    BookingSerializer,
+    BookingSerializer, LandlordBookingSerializer,
 )
-from .permissions import IsLandlord, CanReviewListing
+from .permissions import IsLandlord
 
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
 # ---------------- Auth ----------------
-
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = [AllowAny]
@@ -37,19 +36,17 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        logger.debug(f"User created: {user.username}, password set: {bool(user.password)}")
+        logger.debug(f"User created: {user.email}, password set: {bool(user.password)}, name: {user.first_name}")
 
         return Response({
             "message": "User registered successfully",
             "user_id": user.id,
-            "username": user.username,
+            "name": user.first_name,
             "email": user.email
         }, status=status.HTTP_201_CREATED)
 
-
 class CustomLoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
-
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
@@ -83,10 +80,22 @@ class PublicListingListView(generics.ListAPIView):
 
 class LandlordListingListView(generics.ListAPIView):
     serializer_class = ListingSerializer
-    permission_classes = [IsLandlord]
+    permission_classes = [IsLandlord, IsAuthenticated]
 
     def get_queryset(self):
-        return Listing.objects.filter(landlord=self.request.user)
+        user = self.request.user
+        return Listing.objects.filter(landlord=user)
+
+
+class ListingListCreateView(ListCreateAPIView):
+    queryset = Listing.objects.all()
+    serializer_class = ListingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if self.request.user.role != 'landlord':
+            raise PermissionDenied("Только арендодатель может создавать объявления.")
+        serializer.save(landlord=self.request.user)
 
 
 class ListingManageView(generics.RetrieveUpdateDestroyAPIView):
@@ -187,9 +196,36 @@ class BookingViewSet(viewsets.ModelViewSet):
         if new_status not in ['approved', 'rejected']:
             return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
 
+        if new_status == 'approved':
+            overlapping = Booking.objects.filter(
+                listing=booking.listing,
+                status='approved',
+                start_date__lt=booking.end_date,
+                end_date__gt=booking.start_date
+            ).exclude(id=booking.id)
+            if overlapping.exists():
+                return Response(
+                    {"error": "Невозможно подтвердить бронь: даты пересекаются с другой подтверждённой бронью."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         booking.status = new_status
         booking.save()
         return Response({'status': new_status}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel_booking(self, request, pk=None):
+        booking = self.get_object()
+        if request.user != booking.tenant:
+            return Response({'error': 'Вы не можете отменить чужую бронь.'}, status=status.HTTP_403_FORBIDDEN)
+
+        if booking.status != 'pending':
+            return Response({'error': 'Нельзя отменить уже обработанную бронь.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        booking.status = 'cancelled'
+        booking.save()
+        return Response({'status': 'cancelled'}, status=status.HTTP_200_OK)
+
 
 
 
