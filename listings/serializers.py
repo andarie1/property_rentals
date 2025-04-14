@@ -9,16 +9,17 @@ User = get_user_model()
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, min_length=8)
+    name = serializers.CharField(required=True, max_length=30)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'role')
+        fields = ('name', 'email', 'password', 'role')
 
     def create(self, validated_data):
         user = User(
-            username=validated_data['username'],
             email=validated_data['email'],
-            role=validated_data['role']
+            first_name=validated_data['name'],
+            role=validated_data.get('role')
         )
         user.set_password(validated_data['password'])
         user.save()
@@ -26,16 +27,16 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    username_field = 'username'
+    username_field = 'email'
 
     def validate(self, attrs):
-        username = attrs.get(self.username_field)
+        email = attrs.get("email")
         password = attrs.get("password")
 
-        if username and password:
+        if email and password:
             user = authenticate(
                 request=self.context.get("request"),
-                **{self.username_field: username, "password": password}
+                **{self.username_field: email, "password": password}
             )
             if not user:
                 raise serializers.ValidationError(
@@ -104,3 +105,11 @@ class BookingSerializer(serializers.ModelSerializer):
         validated_data['tenant'] = self.context['request'].user
         return super().create(validated_data)
 
+
+class LandlordBookingSerializer(serializers.ModelSerializer):
+    listing_title = serializers.CharField(source='listing.title')
+    location = serializers.CharField(source='listing.location')
+
+    class Meta:
+        model = Booking
+        fields = ['id', 'listing_title', 'location', 'start_date', 'end_date', 'status', 'tenant']

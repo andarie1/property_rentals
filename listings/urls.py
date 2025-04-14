@@ -12,6 +12,7 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
 
     path('listings/', PublicListingListView.as_view(), name='public-listings'),
+    path('listings/create/', ListingListCreateView.as_view(), name='listing-create'),
 
     path('listings/mine/', LandlordListingListView.as_view(), name='landlord-listings'),
     path('listings/<int:pk>/', ListingManageView.as_view(), name='listing-manage'),

@@ -5,20 +5,20 @@ from .models import User, Listing
 
 class CustomUserAdmin(BaseUserAdmin):
     fieldsets = (
-        (None, {"fields": ("username", "password")}),
-        (_("Personal info"), {"fields": ("email",)}),
+        (None, {"fields": ("email", "password")}),
+        (_("Personal info"), {"fields": ()}),
         (_("Permissions"), {"fields": ("is_active", "is_staff", "is_superuser", "role", "groups", "user_permissions")}),
         (_("Important dates"), {"fields": ("last_login", "date_joined")}),
     )
     add_fieldsets = (
         (None, {
             "classes": ("wide",),
-            "fields": ("username", "email", "role", "password1", "password2"),
+            "fields": ("email", "role", "password", "password2"),
         }),
     )
-    list_display = ("username", "email", "role", "is_staff")
-    search_fields = ("username", "email")
-    ordering = ("username",)
+    list_display = ("email", "role", "is_staff")
+    search_fields = ("email",)
+    ordering = ("email",)
 
 admin.site.register(User, CustomUserAdmin)
 

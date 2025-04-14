@@ -1,35 +1,39 @@
 from django.conf import settings
-from django.contrib.auth.base_user import BaseUserManager
-from django.contrib.auth.models import AbstractUser, PermissionsMixin
+from django.contrib.auth.models import AbstractUser, BaseUserManager, PermissionsMixin
 from django.db import models
-
+from django.utils.translation import gettext_lazy as _
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, username, email, password=None, **extra_fields):
-        if not username:
-            raise ValueError('Username is required')
-        if not password:
-            raise ValueError('Password is required')  # Добавьте эту проверку
+    def create_user(self, email, name, password=None, **extra_fields):
+        if not email:
+            raise ValueError(_('Email is required'))
+        if not name:
+            raise ValueError(_('Name is required'))
         email = self.normalize_email(email)
-        user = self.model(username=username, email=email, **extra_fields)
+        user = self.model(email=email, first_name=name, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, email, password=None, **extra_fields):
+    def create_superuser(self, email, name, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        return self.create_user(username, email, password, **extra_fields)
+        return self.create_user(email, name, password, **extra_fields)
 
 
 class User(AbstractUser, PermissionsMixin):
-    ROLE_CHOICES = (
-        ('tenant', 'Tenant'),
-        ('landlord', 'Landlord'),
-    )
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    username = None
+    email = models.EmailField(_('email address'), unique=True)
+    first_name = models.CharField(_('name'), max_length=30, blank=True)
+    role = models.CharField(max_length=50, blank=True, null=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['name']
+
     objects = CustomUserManager()
 
+    def __str__(self):
+        return self.email
 
 # 2. Объявление
 class Listing(models.Model):
