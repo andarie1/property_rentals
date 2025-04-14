@@ -163,7 +163,6 @@ class ListingReviewListCreateView(generics.ListCreateAPIView):
         serializer.save(tenant=user, listing=listing)
 
 # ---------------- Booking ----------------
-
 class IsTenant(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role == 'tenant'
@@ -188,13 +187,26 @@ class BookingViewSet(viewsets.ModelViewSet):
             return Booking.objects.filter(listing__landlord=user)
         return Booking.objects.none()
 
-    @action(detail=True, methods=['post'], url_path='change_status')
-    def change_status(self, request, pk=None):
-        booking = self.get_object()
+    @action(detail=False, methods=['post'], url_path='change_status')
+    def change_status(self, request):
+        booking_id = request.data.get('booking_id')
         new_status = request.data.get('status')
 
+        if not booking_id or not new_status:
+            return Response({'error': 'Нужно передать booking_id и status'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         if new_status not in ['approved', 'rejected']:
-            return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Недопустимый статус'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            booking = Booking.objects.get(id=booking_id)
+        except Booking.DoesNotExist:
+            return Response({'error': 'Бронь не найдена'}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user != booking.listing.landlord:
+            return Response({'error': 'Вы не являетесь владельцем этого объявления'},
+                            status=status.HTTP_403_FORBIDDEN)
 
         if new_status == 'approved':
             overlapping = Booking.objects.filter(
@@ -203,15 +215,16 @@ class BookingViewSet(viewsets.ModelViewSet):
                 start_date__lt=booking.end_date,
                 end_date__gt=booking.start_date
             ).exclude(id=booking.id)
+
             if overlapping.exists():
                 return Response(
-                    {"error": "Невозможно подтвердить бронь: даты пересекаются с другой подтверждённой бронью."},
+                    {"error": "Невозможно подтвердить: уже есть подтверждённая бронь на эти даты."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
         booking.status = new_status
         booking.save()
-        return Response({'status': new_status}, status=status.HTTP_200_OK)
+        return Response({'status': new_status, 'booking_id': booking.id}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='cancel')
     def cancel_booking(self, request, pk=None):

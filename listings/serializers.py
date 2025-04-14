@@ -84,6 +84,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
 # ---------------- Booking ----------------
+from datetime import date, timedelta
+from rest_framework import serializers
+from .models import Booking
+
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
@@ -97,19 +101,42 @@ class BookingSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        if data['end_date'] <= data['start_date']:
+        listing = data.get('listing')
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+
+        if start_date >= end_date:
             raise serializers.ValidationError("Дата окончания должна быть позже даты начала.")
+
+        overlapping = Booking.objects.filter(
+            listing=listing,
+            status__in=['pending', 'approved'],
+            start_date__lt=end_date,
+            end_date__gt=start_date
+        )
+        if overlapping.exists():
+            raise serializers.ValidationError("Невозможно создать бронь: выбранные даты уже заняты.")
+
         return data
 
     def create(self, validated_data):
         validated_data['tenant'] = self.context['request'].user
         return super().create(validated_data)
 
+from rest_framework import serializers
+from .models import Booking
 
 class LandlordBookingSerializer(serializers.ModelSerializer):
-    listing_title = serializers.CharField(source='listing.title')
-    location = serializers.CharField(source='listing.location')
+    listing_title = serializers.CharField(source='listing.title', read_only=True)
+    location = serializers.CharField(source='listing.location', read_only=True)
+    tenant_email = serializers.EmailField(source='tenant.email', read_only=True)
 
     class Meta:
         model = Booking
-        fields = ['id', 'listing_title', 'location', 'start_date', 'end_date', 'status', 'tenant']
+        fields = [
+            'id',
+            'listing',
+            'start_date',
+            'end_date',
+            'status',
+        ]
