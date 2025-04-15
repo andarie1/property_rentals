@@ -177,7 +177,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             return [IsTenant()]
         elif self.action in ['update', 'partial_update', 'change_status']:
             return [IsLandlord()]
-        return [IsAuthenticated()]
+        return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
         user = self.request.user

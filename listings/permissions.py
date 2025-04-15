@@ -14,7 +14,7 @@ class IsTenant(permissions.BasePermission):
     Разрешает доступ только пользователям с ролью 'tenant'.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == 'landlord'
+        return request.user.is_authenticated and request.user.role == 'tenant'
 
 class CanReviewListing(permissions.BasePermission):
     def has_permission(self, request, view):
