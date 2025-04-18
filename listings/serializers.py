@@ -59,7 +59,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "access": str(refresh.access_token),
             "user": {
                 "id": user.id,
-                "username": user.username,
+                "name": user.first_name,
                 "email": user.email,
                 "role": user.role,
             },
@@ -69,7 +69,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role']
+        fields = ['id', 'name', 'email', 'role']
 
 # ---------------- Listing ----------------
 class ListingSerializer(serializers.ModelSerializer):
