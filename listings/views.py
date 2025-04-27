@@ -94,6 +94,8 @@ class LandlordListingListView(generics.ListAPIView):
     permission_classes = [IsLandlord, IsAuthenticated]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Listing.objects.none()
         return Listing.objects.filter(landlord=self.request.user)
 
 
@@ -113,6 +115,8 @@ class ListingManageView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsLandlord]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Listing.objects.none()
         return Listing.objects.filter(landlord=self.request.user)
 
     def patch(self, request, *args, **kwargs) -> Response:
@@ -147,6 +151,8 @@ class ListingReviewListCreateView(generics.ListCreateAPIView):
         return [permissions.IsAuthenticated()] if self.request.method == 'POST' else [permissions.AllowAny()]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Review.objects.none()
         return Review.objects.filter(listing_id=self.kwargs['listing_id'])
 
     def perform_create(self, serializer):
@@ -180,6 +186,9 @@ class BookingViewSet(viewsets.ModelViewSet):
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Booking.objects.none()
+
         user = self.request.user
         if user.role == 'tenant':
             return Booking.objects.filter(tenant=user)
@@ -195,7 +204,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         if not booking_id or not new_status:
             return Response({'error': 'Нужно передать booking_id и status'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if new_status not in ['approved', 'rejected']:
+        if new_status not in ['confirmed', 'cancelled']: # statuses modified as per model's
             return Response({'error': 'Недопустимый статус'}, status=status.HTTP_400_BAD_REQUEST)
 
         booking = get_object_or_404(Booking, id=booking_id)
@@ -232,6 +241,3 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking.save()
         logger.info(f"Booking cancelled: {booking.id}")
         return Response({'status': 'cancelled'}, status=status.HTTP_200_OK)
-
-
-

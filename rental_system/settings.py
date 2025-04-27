@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     'listings',
     'rental_system',
 
+    'drf_yasg',
+    
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
@@ -156,7 +158,13 @@ SIMPLE_JWT = {
 # Default PK
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-
-
-
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'Введите JWT токен в формате: Bearer <ваш_access_token>'
+        }
+    }
+}

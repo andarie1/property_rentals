@@ -1,8 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager, PermissionsMixin
 from django.db import models
-from django.utils.translation import gettext_lazy as _ #Переводит текст на нужный язык по настройкам локали Django.
-
+from django.utils.translation import gettext_lazy as _
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, name, password=None, **extra_fields):
@@ -26,7 +25,7 @@ class User(AbstractUser, PermissionsMixin):
     username = None
     email = models.EmailField(_('email address'), unique=True)
     first_name = models.CharField(_('name'), max_length=30, blank=True)
-    role = models.CharField(max_length=50, blank=True, null=True)
+    role = models.CharField(max_length=50, blank=True, null=True, default='tenant') # added default
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name']
@@ -87,17 +86,7 @@ class Review(models.Model):
         return f"Review {self.id}: {self.listing} by {self.tenant} - {self.rating}★"
 
 
-# 5. История просмотров
-class ListingView(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="views")
-    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="views")
-    viewed_at = models.DateTimeField(auto_now_add=True)  # Когда смотрел
-
-    class Meta:
-        ordering = ['-viewed_at']
-
-    def __str__(self):
-        return f"View: {self.user} -> {self.listing} at {self.viewed_at}"
+# 5. История просмотров - deleted as was planned as an additional
 
 
 
